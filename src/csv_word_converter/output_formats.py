@@ -109,10 +109,59 @@ class WordFormatter(OutputFormatter):
         Returns:
             Path: Word文档路径
         """
-        # 这里应该调用现有的CSV到Word转换逻辑
-        # 为了保持一致性，我们假设已经有了Word文档
-        self.logger.info(f"Word文档已生成: {self.config.output_path}")
-        return self.config.output_path
+        from .core import csv_to_word_universal
+        import tempfile
+        import pandas as pd
+        
+        self._ensure_output_dir()
+        
+        try:
+            # 从配置中获取数据
+            data = self.config.template_data.get('data', [])
+            if not data:
+                raise ValueError("没有提供数据进行转换")
+            
+            # 将数据转换为DataFrame并保存为临时CSV文件
+            df = pd.DataFrame(data)
+            
+            # 创建临时CSV文件
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False, encoding='utf-8') as temp_csv:
+                df.to_csv(temp_csv.name, index=False, encoding='utf-8')
+                temp_csv_path = temp_csv.name
+            
+            # 使用现有的CSV到Word转换功能，使用第一个可用模板
+            from .core import TemplateFactory
+            factory = TemplateFactory()
+            available_templates = factory.get_available_templates()
+            
+            if not available_templates:
+                raise RuntimeError("没有可用的Word模板")
+            
+            # 使用第一个可用模板
+            template_type = available_templates[0]
+            self.logger.info(f"使用模板类型: {template_type}")
+            
+            result_path = csv_to_word_universal(
+                csv_file=temp_csv_path,
+                template_type=template_type
+            )
+            
+            # 将生成的文档移动到目标位置
+            if result_path and Path(result_path).exists():
+                import shutil
+                shutil.move(result_path, self.config.output_path)
+                self.logger.info(f"Word文档已生成: {self.config.output_path}")
+            else:
+                raise RuntimeError("Word文档生成失败")
+            
+            # 清理临时文件
+            Path(temp_csv_path).unlink(missing_ok=True)
+            
+            return self.config.output_path
+            
+        except Exception as e:
+            self.logger.error(f"Word文档生成失败: {str(e)}")
+            raise
 
 
 class PDFFormatter(OutputFormatter):

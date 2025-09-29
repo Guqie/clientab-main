@@ -87,9 +87,9 @@ def setup_argument_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--format",
         dest="output_format",
-        choices=["word", "pdf", "html", "markdown", "excel", "json"],
-        default="word",
-        help="输出格式 (默认: word)",
+        choices=["docx", "pdf", "html", "markdown", "excel", "json"],
+        default="docx",
+        help="输出格式 (默认: docx)",
     )
 
     # 异步处理参数
@@ -473,7 +473,7 @@ def main() -> int:
                 batch_dir=args.batch_dir,
                 pattern=args.batch_pattern,
                 template_type=args.template_type,
-                output_format=args.format,
+                output_format=args.output_format,
                 output_dir=args.output_dir or "outputs",
                 max_workers=args.max_workers,
                 show_progress=args.progress
@@ -481,13 +481,13 @@ def main() -> int:
             return 0 if success else 1
 
         # 单文件处理模式
-        if args.async_mode:
+        if args.use_async:
             # 异步处理单个文件
             logger.info(f"开始异步转换CSV文件: {args.csv_file}")
             result_path = asyncio.run(process_single_file_async(
                 csv_file=args.csv_file,
                 template_type=args.template_type,
-                output_format=args.format,
+                output_format=args.output_format,
                 output_dir=args.output_dir or "outputs",
                 show_progress=args.progress
             ))
@@ -505,7 +505,6 @@ def main() -> int:
             # 添加可选参数
             if args.output_path:
                 # 如果指定了完整的输出文件路径，提取目录部分作为output_dir
-                import os
                 output_dir = os.path.dirname(args.output_path)
                 if output_dir:
                     convert_kwargs["output_dir"] = output_dir
@@ -514,13 +513,25 @@ def main() -> int:
             result_path = convert_csv_to_word(**convert_kwargs)
 
             # 如果需要转换为其他格式
-            if args.format != "docx" and result_path:
+            if args.output_format != "docx" and result_path:
                 from .output_formats import convert_to_format
-                result_path = convert_to_format(
-                    input_path=result_path,
-                    output_format=args.format,
-                    output_dir=args.output_dir or "outputs"
-                )
+                # 读取生成的docx文件数据
+                import pandas as pd
+                csv_data = pd.read_csv(args.csv_file).to_dict('records')
+                
+                # 构建输出路径
+                output_dir = Path(args.output_dir or "outputs")
+                output_dir.mkdir(exist_ok=True)
+                output_filename = Path(result_path).stem + f".{args.output_format}"
+                output_path = output_dir / output_filename
+                
+                # 使用asyncio运行异步函数
+                result_path = asyncio.run(convert_to_format(
+                    csv_data=csv_data,
+                    output_path=output_path,
+                    title=f"转换报告 - {args.template_type}",
+                    source=args.csv_file
+                ))
 
         # 检查结果
         if result_path and os.path.exists(result_path):

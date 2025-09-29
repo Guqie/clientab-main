@@ -44,12 +44,13 @@ __all__ = [
     "__version__",
     # 核心功能
     "convert_csv_to_word",
+    "csv_to_word_universal",
     "validate_csv_file", 
     "get_available_templates",
     # 核心类（按需导入）
+    "UniversalDocumentGenerator",
     # "DocumentTemplate",
     # "ConfigBasedTemplate",
-    # "UniversalDocumentGenerator",
     # "EnhancedImageDownloader",
 ]
 
@@ -150,20 +151,30 @@ def validate_csv_file(csv_file: str) -> Dict[str, Any]:
 # 包级别配置
 def configure_logging(level: str = "INFO") -> None:
     """
-    配置包的日志级别
+    配置日志系统
 
     参数:
-        level: 日志级别 (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+        level: 日志级别，默认为"INFO"
     """
-    numeric_level = getattr(logging, level.upper(), None)
-    if not isinstance(numeric_level, int):
-        raise ValueError(f"无效的日志级别: {level}")
+    logging.basicConfig(
+        level=getattr(logging, level.upper()),
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
 
-    logging.basicConfig(level=numeric_level, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    logger.setLevel(numeric_level)
 
+# 延迟导入核心函数和类，避免循环依赖
+def __getattr__(name):
+    """动态导入模块属性"""
+    if name == "csv_to_word_universal":
+        from .core import csv_to_word_universal
+        return csv_to_word_universal
+    elif name == "UniversalDocumentGenerator":
+        from .core import UniversalDocumentGenerator
+        return UniversalDocumentGenerator
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
-# 包初始化时的默认配置
+# 初始化日志
 configure_logging("INFO")
 
 logger.info(f"CSV-Word转换工具包 v{__version__} 已加载")

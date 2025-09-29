@@ -145,6 +145,18 @@ def add_return_directory_placeholder(doc, return_link_config: dict | None = None
     run.font.size = Pt(cfg.get("font_size", 12))
     if cfg.get("underline", False):
         run.font.underline = WD_UNDERLINE.SINGLE
+    
+    # 处理字体颜色配置
+    font_color = cfg.get("font_color")
+    if font_color:
+        from docx.shared import RGBColor
+        hex_val = _parse_color_to_hex(font_color)
+        if hex_val:
+            # 将十六进制颜色转换为RGB值并应用
+            r_val = int(hex_val[0:2], 16)
+            g_val = int(hex_val[2:4], 16)
+            b_val = int(hex_val[4:6], 16)
+            run.font.color.rgb = RGBColor(r_val, g_val, b_val)
 
 
 def add_bookmark_to_paragraph_xml(paragraph, bookmark_name: str):
@@ -325,7 +337,8 @@ def _parse_color_to_hex(font_color):
         'blue': '0000FF', 
         'black': '000000',
         'green': '008000',
-        'purple': '800080'
+        'purple': '800080',
+        'darkred': '8B0000'  # 深红色
     }
     
     # 颜色名称

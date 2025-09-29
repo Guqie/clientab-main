@@ -34,12 +34,12 @@ templates:
     name: "新能源模板"
     start_template: "ab_response_formats/new_enegry_start.docx"
     end_template: "ab_response_formats/new_enegry_end.docx"
-    target_bookmark: "本期要目"  # 新能源模板的目标书签
+    target_bookmark: "本期要目"  # 新能源模板的目标书签（修复：使用实际存在的书签名称）
     return_link:
       text: "返回目录"  # 新能源模板使用不同的文本
       font_name: "宋体"
       font_size: 12  # 小四
-      font_color: "red"  # 红色
+      font_color: "darkred"  # 深红色
       alignment: "right"
       underline: false  # 无下划线
     title_mapping:

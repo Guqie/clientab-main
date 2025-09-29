@@ -20,7 +20,7 @@ import time
 import random
 from pathlib import Path
 from csv_word_converter.utils import (
-    # 新增通用工具函数
+    compute_heading_level,
     apply_paragraph_format,
     add_return_directory_placeholder,
     create_target_bookmark_by_keyword,
@@ -29,7 +29,64 @@ from csv_word_converter.utils import (
     compute_heading_level,
     format_title_text,
     add_internal_hyperlink,
+    center_image_description_paragraphs,
 )
+from csv_word_converter.utils.doc_hyperlink_manager import DocumentHyperlinkManager
+
+
+def apply_csv_field_mapping(df):
+    """
+    对CSV数据应用中文字段名到英文字段名的映射
+    
+    Args:
+        df (pd.DataFrame): 原始CSV数据框
+        
+    Returns:
+        pd.DataFrame: 映射后的数据框
+    """
+    field_mapping = {
+        # 标题相关字段
+        '标题': 'title',
+        '一级栏目': 'heading_1', 
+        '二级栏目': 'heading_2',
+        '三级栏目': 'heading_3',
+        
+        # 内容相关字段
+        '内容': 'content',
+        '正文': 'content',
+        '文章内容': 'content',
+        
+        # 来源和日期字段
+        '来源': 'source',
+        '信源': 'source',
+        '日期': 'date',
+        '发布日期': 'date',
+        '时间': 'date',
+        
+        # URL字段
+        'URL': 'url',
+        '链接': 'url',
+        '网址': 'url',
+        
+        # 其他可能的字段
+        '序号': 'index',
+        '编号': 'index',
+        '分类': 'category',
+        '类别': 'category',
+    }
+    
+    # 创建列名映射字典（只映射存在的列）
+    column_rename_dict = {}
+    for chinese_name, english_name in field_mapping.items():
+        if chinese_name in df.columns:
+            column_rename_dict[chinese_name] = english_name
+    
+    # 应用列名映射
+    if column_rename_dict:
+        df = df.rename(columns=column_rename_dict)
+        print(f"应用字段映射: {column_rename_dict}")
+    
+    return df
 
 class DocumentTemplate(ABC):
     """文档模板抽象基类"""
@@ -146,146 +203,9 @@ class UniversalDocumentGenerator:
         self.template_type = template_type
         
         self.logger.info(f"初始化模板: {template_type}")
+        self.hyperlink_manager = DocumentHyperlinkManager()
     
-    def _add_bookmark(self, paragraph, bookmark_name: str, visible: bool = False):
-        """在段落开头添加书签。
 
-        Args:
-            paragraph: 段落对象。
-            bookmark_name: 书签名称。
-            visible: 如果为True，则在书签位置插入一个可见的标记。
-        """
-        # 创建书签起始标签
-        start_tag = OxmlElement('w:bookmarkStart')
-        start_tag.set(qn('w:id'), str(random.randint(100000, 999999)))
-        start_tag.set(qn('w:name'), bookmark_name)
-        
-        # 如果需要可见，则在书签位置添加一个可见的Run
-        if visible:
-            # 创建一个Run来容纳可见的标记文本
-            run_for_text = OxmlElement('w:r')
-            # 创建文本元素
-            text_element = OxmlElement('w:t')
-            text_element.text = f'[{bookmark_name.upper()}]' # 使用大写形式以示区别
-            run_for_text.append(text_element)
-            # 将Run插入到段落的开头
-            paragraph._p.insert(0, run_for_text)
-
-        paragraph._p.insert(0, start_tag)
-
-        # 创建书签结束标签
-        end_tag = OxmlElement('w:bookmarkEnd')
-        end_tag.set(qn('w:id'), start_tag.get(qn('w:id')))
-        end_tag.set(qn('w:name'), bookmark_name)
-        paragraph._p.insert(1, end_tag)
-
-    def _replace_with_hyperlink(self, paragraph, hyperlink_text, anchor_name):
-        """
-        将段落的全部内容替换为一个内部超链接。
-
-        :param paragraph: 段落对象
-        :param hyperlink_text: 超链接显示的文本
-        :param anchor_name: 目标书签的名称
-        """
-        # 清空段落现有内容
-        p = paragraph._p
-        p.clear_content()
-
-        # 创建超链接
-        hyperlink = OxmlElement('w:hyperlink')
-        hyperlink.set(qn('w:anchor'), anchor_name)
-
-        # 创建运行元素并添加文本
-        run = OxmlElement('w:r')
-        run_props = OxmlElement('w:rPr')
-        # 应用超链接样式
-        style = OxmlElement('w:rStyle')
-        style.set(qn('w:val'), 'Hyperlink')
-        run_props.append(style)
-        run.append(run_props)
-
-        text = OxmlElement('w:t')
-        text.text = hyperlink_text
-        run.append(text)
-        
-        hyperlink.append(run)
-        p.append(hyperlink)
-
-    def _create_toc_hyperlinks(self, doc_path):
-        """
-        遍历文档，将所有“返回目录”占位符替换为指向动态书签的超链接。
-        该书签的位置由配置文件中的 'target_bookmark' 关键词决定。
-
-        :param doc_path: Word文档的路径
-        """
-        self.logger.info("开始创建“返回目录”的内部超链接...")
-        try:
-            # 1. 加载文档和配置
-            doc = Document(doc_path)
-            if not doc.paragraphs:
-                self.logger.warning("文档为空，无法创建超链接。")
-                return
-
-            template_config = self.template.get_style_config()
-            target_keyword = template_config.get('target_bookmark', '目录')
-            placeholder = template_config.get('return_link', {}).get('text', '返回目录')
-            
-            # 2. 查找关键词并创建可见书签
-            toc_anchor_name = "TOC_ANCHOR"
-            target_paragraph = None
-            
-            # 遍历段落查找关键词
-            for para in doc.paragraphs:
-                if target_keyword in para.text:
-                    target_paragraph = para
-                    break
-            
-            # 如果在段落中没找到，则遍历表格
-            if not target_paragraph:
-                for table in doc.tables:
-                    for row in table.rows:
-                        for cell in row.cells:
-                            for para in cell.paragraphs:
-                                if target_keyword in para.text:
-                                    target_paragraph = para
-                                    break
-                            if target_paragraph: break
-                        if target_paragraph: break
-                    if target_paragraph: break
-
-            # 根据是否找到关键词来设置书签
-            if target_paragraph:
-                self._add_bookmark(target_paragraph, toc_anchor_name, visible=True)
-                self.logger.info(f"在关键词 '{target_keyword}' 所在位置创建了可见书签: '{toc_anchor_name}'")
-            else:
-                # 回退机制：在文档顶部创建书签
-                first_paragraph = doc.paragraphs[0]
-                self._add_bookmark(first_paragraph, toc_anchor_name, visible=True)
-                self.logger.warning(f"未在文档中找到关键词 '{target_keyword}'，已在文档开头创建可见书签: '{toc_anchor_name}'")
-
-            # 3. 遍历并替换所有占位符为超链接
-            count = 0
-            # 遍历正文段落
-            for para in doc.paragraphs:
-                # 使用完全匹配来避免替换部分文本
-                if para.text.strip() == placeholder:
-                    self._replace_with_hyperlink(para, placeholder, toc_anchor_name)
-                    count += 1
-
-            # 遍历表格
-            for table in doc.tables:
-                for row in table.rows:
-                    for cell in row.cells:
-                        for para in cell.paragraphs:
-                            if para.text.strip() == placeholder:
-                                self._replace_with_hyperlink(para, placeholder, toc_anchor_name)
-                                count += 1
-            
-            doc.save(doc_path)
-            self.logger.info(f"成功将 {count} 个“{placeholder}”占位符转换为超链接。")
-
-        except Exception as e:
-            self.logger.error(f"创建超链接时发生错误: {e}", exc_info=True)
 
     def generate_document(self, data: List[dict]) -> str:
         """生成Word文档"""
@@ -320,7 +240,11 @@ class UniversalDocumentGenerator:
                 self._append_end_template(doc_path)
 
             # 6. 创建返回目录的超链接
-            self._create_toc_hyperlinks(doc_path)
+            self.hyperlink_manager.create_return_to_toc_hyperlinks(
+                doc_path, 
+                self.style_config.get('target_bookmark', '目录'),
+                self.style_config.get('return_link_text', '返回目录')
+            )
             
             self.logger.info(f"文档生成成功: {doc_path}")
             return doc_path
@@ -536,7 +460,9 @@ class UniversalDocumentGenerator:
                 content = str(content)
 
             # 预处理：清除股票代码信息（兼容全/半角括号与中点），如（688333.SH）/(3931.HK)
+            # 同时清除股票价格信息，如(18.810, -0.09, -0.48%)
             content = re.sub(r'[（(]\s*\d{4,6}\s*[．\.]\s*[A-Za-z]{1,5}\s*[)）]', '', content)
+            content = re.sub(r'[（(]\s*\d+\.\d+\s*,\s*[+-]?\d+\.\d+\s*,\s*[+-]?\d+\.\d+%\s*[)）]', '', content)
 
             # 改进的URL模式匹配：增加图片URL预筛选
             url_pattern = re.compile(r'https?://[^\s\u4e00-\u9fff]+')
@@ -709,6 +635,8 @@ class UniversalDocumentGenerator:
                     self.logger.error(f"URL 替换阶段出错: {e}")
             # 轻量清洗：去除全角空格，规整空白与换行，避免出现大量“　　”以及异常空行
             try:
+                # 转换"^l"为"^p"（Word换行符标准化）
+                text = text.replace('^l', '^p')
                 # 移除全角空格（U+3000）
                 text = text.replace('　', '')
                 # 合并连续半角空格/制表符为单个空格
@@ -850,7 +778,7 @@ class UniversalDocumentGenerator:
                             disp_h_in = max_h_in
                             disp_w_in = disp_h_in * aspect
                         run.add_picture(image_path, width=Inches(disp_w_in), height=Inches(disp_h_in))
-                        # 对齐
+                        # 对齐设置：居中对齐且首行不缩进
                         align = (image_cfg.get('alignment') or 'center').lower()
                         if align == 'left':
                             paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
@@ -858,6 +786,10 @@ class UniversalDocumentGenerator:
                             paragraph.alignment = WD_ALIGN_PARAGRAPH.RIGHT
                         else:
                             paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                        
+                        # 设置首行不缩进（图片段落专用格式）
+                        paragraph_format = paragraph.paragraph_format
+                        paragraph_format.first_line_indent = Inches(0)  # 首行不缩进
                         if hasattr(self, 'logger') and self.logger:
                             self.logger.info(f"插入图片: {image_path} -> {disp_w_in:.2f}x{disp_h_in:.2f} in")
                     except Exception as e:
@@ -1239,14 +1171,25 @@ def csv_to_word_universal(csv_file: str, template_type: str,
     
     for encoding in encodings:
         try:
-            df = pd.read_csv(csv_file, encoding=encoding)
-            print(f"成功使用编码 {encoding} 读取CSV文件")
+            # 检查是否需要跳过第一行（如果第一行是"Table 1"等表头）
+            first_line = None
+            with open(csv_file, 'r', encoding=encoding) as f:
+                first_line = f.readline().strip()
+            
+            # 如果第一行包含"Table"等关键词，跳过第一行
+            skip_rows = 1 if first_line and ('Table' in first_line or 'table' in first_line) else 0
+            
+            df = pd.read_csv(csv_file, encoding=encoding, skiprows=skip_rows)
+            print(f"成功使用编码 {encoding} 读取CSV文件，跳过行数: {skip_rows}")
             break
         except UnicodeDecodeError:
             continue
     
     if df is None:
         raise ValueError(f"无法读取CSV文件 {csv_file}，尝试了编码: {encodings}")
+    
+    # 应用字段映射，将中文字段名映射为英文字段名
+    df = apply_csv_field_mapping(df)
     
     data = df.to_dict('records')
     

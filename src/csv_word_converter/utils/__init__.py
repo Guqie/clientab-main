@@ -22,6 +22,7 @@ from .doc_utils import (
     compute_heading_level,
     format_title_text,
     add_internal_hyperlink,
+    center_image_description_paragraphs,
 )
 from .image_downloader import EnhancedImageDownloader
 
@@ -35,5 +36,6 @@ __all__ = [
     "compute_heading_level",
     "format_title_text",
     "add_internal_hyperlink",
+    "center_image_description_paragraphs",
     "EnhancedImageDownloader",
 ]
