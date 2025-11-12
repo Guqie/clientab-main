@@ -50,6 +50,7 @@ def apply_csv_field_mapping(df):
         '一级栏目': 'heading_1', 
         '二级栏目': 'heading_2',
         '三级栏目': 'heading_3',
+     
         
         # 内容相关字段
         '内容': 'content',
@@ -240,10 +241,12 @@ class UniversalDocumentGenerator:
                 self._append_end_template(doc_path)
 
             # 6. 创建返回目录的超链接
+            return_link_config = self.style_config.get('return_link', {})
             self.hyperlink_manager.create_return_to_toc_hyperlinks(
                 doc_path, 
                 self.style_config.get('target_bookmark', '目录'),
-                self.style_config.get('return_link_text', '返回目录')
+                self.style_config.get('return_link_text', '返回目录'),
+                return_link_config
             )
             
             self.logger.info(f"文档生成成功: {doc_path}")
@@ -281,9 +284,8 @@ class UniversalDocumentGenerator:
         if has_heading_2:
             self._add_heading(doc, heading_2, "heading_2")
         
-        # 处理三级标题 - 优先使用heading_3字段，如果为空则使用title字段
+        # 处理三级标题 - 仅使用heading_3字段
         heading_3 = item.get("heading_3")
-        title = item.get("title")
         
         # 检查heading_3字段
         try:
@@ -291,19 +293,33 @@ class UniversalDocumentGenerator:
         except (ValueError, TypeError):
             has_heading_3 = heading_3 and heading_3 is not None
         
+        if has_heading_3:
+            self._add_heading(doc, heading_3, "heading_3")
+            self.logger.info(f"添加三级标题(heading_3): {heading_3}")
+        
+        # 处理四级标题 - 优先使用heading_4字段，如果为空则使用title字段
+        heading_4 = item.get("heading_4")
+        title = item.get("title")
+        
+        # 检查heading_4字段
+        try:
+            has_heading_4 = heading_4 and pd.notna(heading_4)
+        except (ValueError, TypeError):
+            has_heading_4 = heading_4 and heading_4 is not None
+        
         # 检查title字段
         try:
             has_title = title and pd.notna(title)
         except (ValueError, TypeError):
             has_title = title and title is not None
         
-        # 优先使用heading_3作为三级标题，如果没有则使用title
-        if has_heading_3:
-            self._add_heading(doc, heading_3, "heading_3")
-            self.logger.info(f"添加三级标题(heading_3): {heading_3}")
+        # 优先使用heading_4作为四级标题，如果没有则使用title作为四级标题
+        if has_heading_4:
+            self._add_heading(doc, heading_4, "heading_4")
+            self.logger.info(f"添加四级标题(heading_4): {heading_4}")
         elif has_title:
             self._add_heading(doc, title, "title")
-            self.logger.info(f"添加三级标题(title): {title}")
+            self.logger.info(f"添加四级标题(title): {title}")
         
         # 处理正文内容
         content = item.get("content")
@@ -635,8 +651,6 @@ class UniversalDocumentGenerator:
                     self.logger.error(f"URL 替换阶段出错: {e}")
             # 轻量清洗：去除全角空格，规整空白与换行，避免出现大量“　　”以及异常空行
             try:
-                # 转换"^l"为"^p"（Word换行符标准化）
-                text = text.replace('^l', '^p')
                 # 移除全角空格（U+3000）
                 text = text.replace('　', '')
                 # 合并连续半角空格/制表符为单个空格
@@ -737,17 +751,15 @@ class UniversalDocumentGenerator:
                 if "*" in text_part:
                     self._add_formatted_text(paragraph, text_part)
                 else:
-                    lines = text_part.split('\n')
-                    for j, line in enumerate(lines):
-                        if not line.strip():
-                            continue
-                        if j > 0:
-                            paragraph.add_run().add_break()
-                        run = paragraph.add_run(line)
+                    # 预处理：清理文本中的换行符，避免产生^l换行符
+                    # 对于图片相关的文本，通常不需要保留内部换行，统一处理为单行文本
+                    cleaned_text = text_part.replace('\n', ' ').strip()
+                    if cleaned_text:
+                        run = paragraph.add_run(cleaned_text)
                         if text_cfg.get("font_name"):
                             run.font.name = text_cfg["font_name"]
-                    if text_cfg.get("font_size"):
-                        run.font.size = Pt(text_cfg["font_size"])
+                        if text_cfg.get("font_size"):
+                            run.font.size = Pt(text_cfg["font_size"])
 
             # 图片部分（parts[i+1] 为路径）
             if i + 1 < len(parts):
@@ -778,20 +790,26 @@ class UniversalDocumentGenerator:
                             disp_h_in = max_h_in
                             disp_w_in = disp_h_in * aspect
                         run.add_picture(image_path, width=Inches(disp_w_in), height=Inches(disp_h_in))
+                        
+                        # 图片段落格式设置：确保居中对齐且无缩进
+                        paragraph_format = paragraph.paragraph_format
+                        
                         # 对齐设置：居中对齐且首行不缩进
                         align = (image_cfg.get('alignment') or 'center').lower()
                         if align == 'left':
                             paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
+                            paragraph_format.first_line_indent = Inches(0)
                         elif align == 'right':
                             paragraph.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+                            paragraph_format.first_line_indent = Inches(0)
                         else:
                             paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                            paragraph_format.first_line_indent = Inches(0)  # 首行不缩进
                         
-                        # 设置首行不缩进（图片段落专用格式）
-                        paragraph_format = paragraph.paragraph_format
-                        paragraph_format.first_line_indent = Inches(0)  # 首行不缩进
-                        if hasattr(self, 'logger') and self.logger:
-                            self.logger.info(f"插入图片: {image_path} -> {disp_w_in:.2f}x{disp_h_in:.2f} in")
+                        # 确保段落左右缩进也为0（避免继承其他样式的缩进）
+                        paragraph_format.left_indent = Inches(0)
+                        paragraph_format.right_indent = Inches(0)
+                        
                     except Exception as e:
                         if hasattr(self, 'logger') and self.logger:
                             self.logger.error(f"插入图片失败 {image_path}: {e}")

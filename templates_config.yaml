@@ -1,138 +1,137 @@
-templates:
+﻿templates:
   guoziwei:
+    # 国资委模板：适用于政府/监管类周报。
     name: "国资委模板"
     start_template: "ab_response_formats/guoziwei_start.docx"
     end_template: "ab_response_formats/guoziwei_end.docx"
-    target_bookmark: "目录"  # 国资委模板的目标书签
+    target_bookmark: "目录"  # Word 模板中插入正文内容的书签名称
     return_link:
-      text: "返回目录"  # 返回链接显示文本
+      text: "返回目录"  # 超链接显示文本
       font_name: "宋体"
-      font_size: 12  # 小四
-      font_color: "blue"  # 蓝色
+      font_size: 12  # 小四号字体
+      font_color: "blue"
       alignment: "right"
-      underline: true  # 下划线
+      underline: true
     title_mapping:
-      # 标题字段到Word标题级别的映射
-      heading_1: 1  # heading_1 -> Heading 1
-      heading_2: 2  # heading_2 -> Heading 2  
-      title: 3      # title -> Heading 3 (国资委模板使用3级标题)
+      heading_1: 1  # 一级栏目 → Heading 1
+      heading_2: 2  # 二级栏目 → Heading 2
+      title: 3      # 标题 → Heading 3
     styles:
       heading_1: {}
       heading_2: {}
       title:
-        alignment: "center"  # 标题居中对齐
+        alignment: "center"
       content:
-        first_line_indent: 2  # 首行缩进2字符
-        alignment: "justify"  # 两端对齐
+        first_line_indent: 2
+        alignment: "justify"
       source_date:
         font_name: "宋体"
         font_size: 12
-        alignment: "center"  # 信源和日期居中对齐
+        alignment: "center"
         space_after: 12
-        
+
   new_energy:
+    # 新能源行业模板：兼容风光储等专题周报。
     name: "新能源模板"
-    start_template: "ab_response_formats/new_enegry_start.docx"
+    start_template: "ab_response_formats/new_enegry_start.docx"  # 注意：文件名沿用历史拼写 new_enegry
     end_template: "ab_response_formats/new_enegry_end.docx"
-    target_bookmark: "本期要目"  # 新能源模板的目标书签（修复：使用实际存在的书签名称）
+    target_bookmark: "本期要目"
     return_link:
-      text: "返回目录"  # 新能源模板使用不同的文本
+      text: "返回目录"
       font_name: "宋体"
-      font_size: 12  # 小四
-      font_color: "darkred"  # 深红色
+      font_size: 12
+      font_color: "darkred"
       alignment: "right"
-      underline: false  # 无下划线
+      underline: false
     title_mapping:
-      # 标题字段到Word标题级别的映射
-      heading_1: 1  # heading_1 -> Heading 1
-      heading_2: 2  # heading_2 -> Heading 2
-      title: 4      # title -> Heading 4 (新能源模板使用4级标题)
+      heading_1: 1
+      heading_2: 2
+      title: 4      # 标题内容渲染为 Heading 4
     styles:
-      # 样式配置为空，使用模板中的默认样式
       heading_1: {}
       heading_2: {}
       title:
-        alignment: "center"  # 标题居中对齐
+        alignment: "center"
       content:
-          first_line_indent: 2  # 首行缩进2字符
-          alignment: "justify"  # 两端对齐
+        first_line_indent: 2
+        alignment: "justify"
 
-  
   realty:
+    # 房地产行业模板：支持三级栏目结构。
     name: "房地产模板"
     start_template: "ab_response_formats/Realty_start.docx"
     end_template: "ab_response_formats/Realty_end.docx"
-    target_bookmark: "目录"  # 房地产模板的目标书签
+    target_bookmark: "目录"
     return_link:
-      text: "返回目录"  # 返回链接显示文本
+      text: "返回目录"
       font_name: "宋体"
-      font_size: 12  # 小四
-      font_color: "red"  # 红色
+      font_size: 12
+      font_color: "#8B0000"  # 深红色
       alignment: "right"
-      underline: false  # 无下划线
+      underline: false
     title_mapping:
-      # 标题字段到Word标题级别的映射
-      heading_1: 1  # heading_1 -> Heading 1
-      heading_2: 2  # heading_2 -> Heading 2
-      heading_3: 3  # heading_3 -> Heading 3 (新增三级标题支持)
-      title: 4      # title -> Heading 4 (房地产模板使用4级标题)
+      heading_1: 1
+      heading_2: 2
+      heading_3: 3  # 三级栏目 → Heading 3
+      heading_4: 4  # 四级栏目 → Heading 4
+      title: 4
     styles:
       heading_1: {}
       heading_2: {}
-      heading_3: {}  # 新增三级标题样式配置
+      heading_3: {}
+      heading_4: {}  # 添加四级标题样式配置
       title:
-        alignment: "center"  # 标题居中对齐
+        alignment: "center"
       content:
-        first_line_indent: 2  # 首行缩进2字符
-        alignment: "justify"  # 两端对齐
+        first_line_indent: 2
+        alignment: "justify"
 
   technology:
+    # 科技与产业模板：科技新闻、产业政策等内容。
     name: "科技与产业模板"
     start_template: "ab_response_formats/science,technology_start.docx"
     end_template: "ab_response_formats/science,technology_end.docx"
-    target_bookmark: "目录"  # 科技与产业模板的目标书签
+    target_bookmark: "目录"
     return_link:
-      text: "返回目录"  # 返回链接显示文本
+      text: "返回目录"
       font_name: "宋体"
-      font_size: 10.5  # 五号
-      font_color: "blue"  # 蓝色
+      font_size: 10.5  # 五号字体
+      font_color: "blue"
       alignment: "right"
-      underline: true  # 下划线
+      underline: true
     title_mapping:
-      # 标题字段到Word标题级别的映射
-      heading_1: 1  # heading_1 -> Heading 1
-      heading_2: 2  # heading_2 -> Heading 2
-      title: 3      # title -> Heading 3 (科技与产业模板使用3级标题)
+      heading_1: 1
+      heading_2: 2
+      title: 3
     styles:
       heading_1: {}
       heading_2: {}
       title:
-        alignment: "center"  # 标题居中对齐
+        alignment: "center"
       content: {}
 
-
   electricity:
+    # 电力行业模板：适合电力调度、电价、电改等资讯。
     name: "电力模板"
     start_template: "ab_response_formats/electricity_start.docx"
     end_template: "ab_response_formats/electricity_end.docx"
-    target_bookmark: "目录"  # 电力模板的目标书签
+    target_bookmark: "目录"
     return_link:
-      text: "返回目录"  # 返回链接显示文本
+      text: "返回目录"
       font_name: "宋体"
-      font_size: 12  # 小四
-      font_color: "red"  # 红色
+      font_size: 12
+      font_color: "red"
       alignment: "right"
-      underline: false  # 无下划线
+      underline: false
     title_mapping:
-      # 标题字段到Word标题级别的映射
-      heading_1: 1  # heading_1 -> Heading 1
-      heading_2: 2  # heading_2 -> Heading 2
-      title: 4      # title -> Heading 4 (电力模板使用4级标题)
+      heading_1: 1
+      heading_2: 2
+      title: 4
     styles:
       heading_1: {}
       heading_2: {}
       title:
-        alignment: "center"  # 标题居中对齐
+        alignment: "center"
       content:
-        first_line_indent: 2  # 首行缩进2字符
-        alignment: "justify"  # 两端对齐
+        first_line_indent: 2
+        alignment: "justify"

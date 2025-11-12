@@ -42,6 +42,13 @@ class BatchConfig:
     exclude_patterns: List[str] = field(default_factory=list)  # 排除模式
     include_patterns: List[str] = field(default_factory=list)  # 包含模式
 
+    def __post_init__(self):
+        """在初始化后执行，确保路径是Path对象"""
+        if isinstance(self.input_dir, str):
+            self.input_dir = Path(self.input_dir)
+        if isinstance(self.output_dir, str):
+            self.output_dir = Path(self.output_dir)
+
 
 @dataclass
 class BatchResult:

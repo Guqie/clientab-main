@@ -1,0 +1,22 @@
+# Streamlit配置文件
+# 用于禁用分析功能，解决SSL协议错误
+
+[browser]
+# 禁用浏览器端统计收集
+gatherUsageStats = false
+
+[server]
+# 禁用CORS
+enableCORS = false
+# 禁用XSRF保护（仅本地开发）
+enableXsrfProtection = false
+# 最大上传大小 (MB)
+maxUploadSize = 200
+
+[theme]
+# 使用浅色主题
+base = "light"
+primaryColor = "#1f77b4"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f0f2f6"
+textColor = "#262730"

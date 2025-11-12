@@ -70,7 +70,7 @@ class DocumentHyperlinkManager:
             paragraph._p.insert(0, start_tag)
             paragraph._p.insert(1, end_tag)
 
-    def _replace_with_hyperlink(self, paragraph, hyperlink_text: str, anchor_name: str):
+    def _replace_with_hyperlink(self, paragraph, hyperlink_text: str, anchor_name: str, config: dict = None):
         """
         将段落的全部内容替换为一个内部超链接（使用WPS兼容性优化版本）。
 
@@ -78,9 +78,16 @@ class DocumentHyperlinkManager:
             paragraph: docx.paragraph.Paragraph 对象。
             hyperlink_text: 超链接显示的文本。
             anchor_name: 目标书签的名称。
+            config: 超链接样式配置，包含font_color、font_name、font_size、underline等
         """
         # 清空段落现有内容
         paragraph.clear()
+        
+        # 从配置中获取样式参数，如果没有配置则使用默认值
+        font_color = config.get("font_color", "#0563C1") if config else "#0563C1"
+        font_name = config.get("font_name", "宋体") if config else "宋体"
+        font_size = config.get("font_size", 12) if config else 12
+        underline = config.get("underline", True) if config else True
         
         # 使用WPS兼容性优化的add_internal_hyperlink函数
         add_internal_hyperlink(
@@ -88,13 +95,13 @@ class DocumentHyperlinkManager:
             link_to=anchor_name,
             text=hyperlink_text,
             tooltip="点击返回目录",
-            font_name="宋体",
-            font_size=12,
-            underline=True,
-            font_color="#0563C1"  # 标准超链接蓝色
+            font_name=font_name,
+            font_size=font_size,
+            underline=underline,
+            font_color=font_color
         )
 
-    def create_return_to_toc_hyperlinks(self, doc_path: str, target_keyword: str, placeholder_text: str):
+    def create_return_to_toc_hyperlinks(self, doc_path: str, target_keyword: str, placeholder_text: str, config: dict = None):
         """
         遍历文档，将所有指定占位符替换为指向动态书签的超链接。
         该书签的位置由配置文件中的 'target_bookmark' 关键词决定。
@@ -103,6 +110,7 @@ class DocumentHyperlinkManager:
             doc_path: Word文档的路径。
             target_keyword: 用于定位目录书签的关键词。
             placeholder_text: 需要被替换为超链接的占位符文本。
+            config: 超链接样式配置，包含font_color、font_name、font_size、underline等
         """
         self.logger.info("开始创建“返回目录”的内部超链接...")
         try:
@@ -148,7 +156,7 @@ class DocumentHyperlinkManager:
             # 遍历正文段落
             for para in doc.paragraphs:
                 if para.text.strip() == placeholder_text:
-                    self._replace_with_hyperlink(para, placeholder_text, toc_anchor_name)
+                    self._replace_with_hyperlink(para, placeholder_text, toc_anchor_name, config)
                     count += 1
 
             # 遍历表格
@@ -157,7 +165,7 @@ class DocumentHyperlinkManager:
                     for cell in row.cells:
                         for para in cell.paragraphs:
                             if para.text.strip() == placeholder_text:
-                                self._replace_with_hyperlink(para, placeholder_text, toc_anchor_name)
+                                self._replace_with_hyperlink(para, placeholder_text, toc_anchor_name, config)
                                 count += 1
             
             doc.save(doc_path)
