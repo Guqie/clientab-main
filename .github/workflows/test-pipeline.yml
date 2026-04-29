@@ -1,0 +1,25 @@
+name: Pipeline Test
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Lint
+        run: pip install flake8 black && black --check src/ scripts/
+      - name: Type check
+        run: pip install mypy && mypy src/csv_word_converter/ --ignore-missing-imports
+      - name: Test pipeline module import
+        run: python -c "from csv_word_converter.pipeline import ZhanxingPipeline; print('OK')"
+      - name: Test CLI zhanxing subcommand
+        run: python -m csv_word_converter.cli --zhanxing --help

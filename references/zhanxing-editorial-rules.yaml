@@ -1,0 +1,153 @@
+# 战新月报编辑口径配置
+# 对应 references/editorial-rules.md
+
+# 一级栏目白名单
+heading_1_whitelist:
+  - "一、政策导航与战略解读"
+  - "二、产业全景与细分洞察"
+  - "三、技术前沿与创新突破"
+  - "四、竞争格局与企业动态"
+
+# 二级栏目白名单
+heading_2_whitelist:
+  - "（一）清洁能源装备"
+  - "（二）数智及未来产业"
+
+# 清洁能源装备范围
+clean_energy_scope:
+  include:
+    wind:
+      - "风电机组系统"
+      - "风电叶片"
+      - "风电发电机"
+      - "风电塔筒"
+      - "风电齿轮箱"
+    solar:
+      - "光伏逆变器"  # 仅此一项
+    energy_storage:
+      - "锂离子电池储能系统"
+      - "飞轮储能系统"
+      - "超级电容器系统"
+      - "长时储能"
+      - "液流电池"
+      - "压缩空气储能"
+      - "二氧化碳储能"
+    hydrogen:
+      - "制氢系统部件"
+      - "氢气运输设备"
+      - "加氢设备"
+      - "氢发电系统"
+      - "储氢设备"
+    other:
+      - "绿色燃料发动机"
+      - "柴油发电机组"
+      - "新型电力系统输变电装备"
+      - "新能源汽车电驱系统"
+  exclude:
+    - "新能源汽车动力电池"
+    - "消费电池"
+    - "光伏电池片"
+    - "光伏组件"
+    - "硅片"
+    - "光伏电站建设（逆变器非核心时）"
+
+# 数智及未来产业范围
+digital_future_scope:
+  include:
+    intelligent_manufacturing:
+      - "智能制造"
+      - "工业互联网"
+      - "数字化转型"
+      - "智能工厂"
+      - "AI+制造"
+      - "行动计划/试点/平台/标准"
+    industrial_robot:
+      - "工业机器人本体"
+      - "机器人集成"
+      - " offshore 工程机器人"
+      - "人形机器人/具身智能（工业/制造场景时）"
+    industrial_software:
+      - "CAD"
+      - "CAE"
+      - "EDA"
+      - "MES"
+      - "PLM"
+      - "研发设计软件"
+      - "生产制造软件"
+      - "运维软件"
+    power_semiconductor:
+      - "功率半导体"
+      - "传感器"
+      - "SiC"
+      - "GaN功率器件"
+      - "功率模块"
+    new_materials:
+      - "复合材料"
+      - "气体分离材料"
+      - "膜材料"
+      - "气凝胶"
+      - "压电陶瓷"
+      - "关键原材料（装备/高端制造关联时）"
+    offshore_engineering:
+      - "船用发动机"
+      - "船用涡轮增压器"
+      - " offshore 工程装备"
+      - "深海机器人"
+      - "深海装备制造"
+      - "海底传感器"
+    energy_env:
+      - "环保材料"
+      - "污水处理"
+      - "节能技术"
+      - "绿色制造"
+    low_altitude:
+      - "无人机"
+      - "低空经济装备"
+      - "eVTOL"
+      - "飞行汽车"
+      - "电动推进"
+      - "自主飞行算法"
+  exclude:
+    - "通用CPU/GPU/AI芯片/存储器芯片"
+    - "移动芯片"
+    - "泛半导体园区新闻"
+
+# 硬性排除规则
+hard_exclusions:
+  - type: self_news
+    keywords:
+      - "中车"
+      - "中国中车"
+      - "CRRC"
+  - type: financial_pure
+    description: "纯股价/金融叙事，无产业事实"
+  - type: conference_pure
+    description: "纯会议预告/仪式，无实质内容"
+  - type: generic_views
+    description: "纯观点/评论/采访，无新事实"
+  - type: consumer_electronics
+    description: "纯消费电子"
+  - type: internet_platform
+    description: "通用互联网平台新闻"
+  - type: duplicate_repost
+    description: "重复转载，无新事实"
+
+# 新闻价值优先级
+news_value_priority:
+  1:
+    - "政策/规划/标准/试点/官方通知"
+  2:
+    - "产业规模/市场格局/产能/订单/装机/出口"
+  3:
+    - "技术突破/首台/首线/首飞/首艘/测试验证/工程化验证"
+  4:
+    - "企业合作/投资/生产基地/产品发布/海外扩张/重大订单"
+
+# 正文内容最短字符数（校验阈值）
+short_content_threshold: 80
+
+# 自新闻检测关键词
+self_news_keywords:
+  - "中车"
+  - "中国中车"
+  - "CRRC"
